@@ -11,10 +11,11 @@
 
 	#encrypt,decrypt
 		inputstring:	.space 100
+		SOURCE:			.space 100
 		cryptprmpt1:	.asciiz "\nEnter an input string:"
 		cryptprmpt2:	.asciiz "\nEnter an offset value:"
-		cryptprmpt3		.asciiz "\nSOURCE:"
-		cryptprmpt4		.asciiz "\nPROCESSED:"
+		cryptprmpt3:	.asciiz "\nSOURCE:"
+		cryptprmpt4:	.asciiz "\nPROCESSED:"
 
 
 		.text           	# Code area starts here
@@ -115,7 +116,8 @@ numberSeries:
 
 
 
-prim:j main
+prim:
+j main
 
 
 
@@ -127,6 +129,90 @@ prim:j main
 
 
 crypt:
+			
+			li   $v0, 4    	   				# Syscall to print prompt string
+			la   $a0, cryptprmpt1         	# li and la are pseudo instr.
+			syscall
+			li	$v0,8						#Getting input from user
+			la	$a0,inputstring
+			li	$a1,100
+			syscall
+			la $t0,($a0) 					# Entered string is stored in the t0 register
+			li $t1,100 						# string length
+			
+	takeoffset:		
+			li   $v0, 4    	   				# Syscall to print prompt string
+			la   $a0, cryptprmpt2         	# li and la are pseudo instr.
+			syscall
+			li	$v0, 5						# read number into $v0
+			syscall							# make the syscall read_int
+			move	$t2, $v0				# move the number read into $t2	(offset)
+			bgt		$t2, 25	,takeoffset
+			blt		$t2,-25	,takeoffset	
+			beq		$t2,0,	,takeoffset
+			
+			#loop will start here:
+			la $t7,SOURCE						#t7 holds the addres of Source
+			addi 	$t4,$zero,0					#t4=i=0
+	loop1:	beq		$t4,100	endloop1		
+			lb 		$t3, 0($t0)					#reading first character
+			
+			beq 	$t3,10,endcrypt				# if character is NULL
+			bgt 	$t3,122,NotLover			#if character is greater than Z
+			blt 	$t3,97,NotLover				#if character is lover than A		
+			addi 	$t3,$t3,-32					#makes all characters upper
+NotLover:	sb		$t3,SOURCE($t4)			
+			bgt		$t3,90,Notletter
+			blt		$t3,65,Notletter
+			add		$t3,$t3,$t2
+	contpoint:
+			bgt		$t3,90 greaterThanZ
+			blt  	$t3,65,lessThanA
+Notletter:				
+			
+			
+			sb		$t3,inputstring($t4)			
+
+			addi $t4,$t4,1
+			addi 	$t0,$t0,1
+			j loop1
+
+endloop1:
+
+			
+			
+
+endcrypt:	
+
+			li   $v0, 4    	   				# Syscall to print prompt string
+			la   $a0, cryptprmpt3         	# li and la are pseudo instr.
+			syscall
+			addi $t4,$zero,0
+			la $t0,SOURCE
+	loop3:	beq $t4,100,endloop3
+			li,$v0, 11                  	# service 11 is print character
+			lb  $a0, 0($t0)
+			beq $a0,10,endloop3				# if character is NULL
+			syscall
+			addi $t0,$t0,1
+			j loop3
+	
+	endloop3:
+
+
+			li   $v0, 4    	   				# Syscall to print prompt string
+			la   $a0, cryptprmpt4         	# li and la are pseudo instr.
+			syscall
+			addi $t4,$zero,0
+			la $t0,inputstring
+	loop2:	beq $t4,100,endloop2
+			li,$v0, 11                  	# service 11 is print character
+			lb  $a0, 0($t0)
+			beq $a0,10,endloop2				# if character is NULL
+			syscall
+			addi $t0,$t0,1
+			j loop2
+	endloop2:
 
 
 
@@ -134,6 +220,12 @@ crypt:
 
 j main
 
+greaterThanZ:
+	addi $t3,$t3,-26
+	j contpoint
+lessThanA:
+	addi $t3,$t3,26
+	j contpoint
 
 
 
