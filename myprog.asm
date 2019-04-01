@@ -215,7 +215,16 @@ endcrypt:
 	endloop2:
 
 
-
+			addi $t1,$zero,10
+			addi $t0,$zero,0
+			add $t2,$zero,100
+		
+	clearloop:
+				sb $t1,SOURCE($t0)
+				sb $t1,inputstring($t0)
+				addi $t0,$t0,1
+				
+				bne $t0,$t2 clearloop 
 
 
 j main
